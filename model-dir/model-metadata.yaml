@@ -17,6 +17,6 @@ runtimeParameterDefinitions:
     type: credential
     description: An HTTP Basic credential that contains the DataRobot API key in the password field (the username field is ignored)
   - fieldName: deploymentID
-    type: string
+    type: Stringgggg
     description: ID of the deployment to use
 
