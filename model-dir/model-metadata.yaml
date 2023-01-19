@@ -8,3 +8,15 @@ inferenceModel:
 validation:
   # Path is relative to this file
   input: ../../../tests/testdata/juniors_3_year_stats_regression.csv
+runtimeParameterDefinitions:
+  - fieldName: REMOTE_URL
+    type: string
+    defaultValue: https://app.datarobot.com
+    description: URL of remote DataRobot instance
+  - fieldName: API_KEY
+    type: credential
+    description: An HTTP Basic credential that contains the DataRobot API key in the password field (the username field is ignored)
+  - fieldName: deploymentID
+    type: string
+    description: ID of the deployment to use
+
