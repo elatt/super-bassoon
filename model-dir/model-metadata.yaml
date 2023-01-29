@@ -9,11 +9,11 @@ validation:
   # Path is relative to this file
   input: ../../../tests/testdata/juniors_3_year_stats_regression.csv
 runtimeParameterDefinitions:
-  - fieldName: REMOTE_URL
+  - fieldName: DATAROBOT_ENDPOINT
     type: string
     defaultValue: https://app.datarobot.com
     description: URL of remote DataRobot instance
-  - fieldName: API_KEY
+  - fieldName: DATAROBOT_API_KEY
     type: credential
     description: An HTTP Basic credential that contains the DataRobot API key in the password field (the username field is ignored)
   - fieldName: deploymentID
