@@ -7,15 +7,9 @@ Released under the terms of DataRobot Tool and Utility Agreement.
 from datarobot_drum.runtime_parameters.runtime_parameters import RuntimeParameters
 import pandas as pd
 import requests
+import logging
 
-# Load runtime params set by the platform
-PUBLIC_API_URL = RuntimeParameters.get('DATAROBOT_ENDPOINT') + '/api/v2'
-API_KEY = RuntimeParameters.get('DATAROBOT_API_KEY')['password']
-DEPLOYMENT_ID = RuntimeParameters.get('deploymentID')
-
-# Will be set
-API_URL = None
-DATAROBOT_KEY = None
+logger = logging.getLogger(__name__)
 
 # Don't change this. It is enforced server-side too.
 MAX_PREDICTION_FILE_SIZE_BYTES = 52428800  # 50 MB
@@ -114,10 +108,29 @@ def _raise_dataroboterror_for_status(response):
 
 ### PASTE AN INTEGRATION SNIPPET FROM A DEPLOYMENT ABOVE ###
 def load_model(code_dir):
+    logger.info("Loading Runtime Parameters...")
+    public_api_url = RuntimeParameters.get('DATAROBOT_ENDPOINT') + '/api/v2'
+    global DEPLOYMENT_ID
+    DEPLOYMENT_ID = RuntimeParameters.get('deploymentID')
+
+    global API_KEY
+    API_KEY = RuntimeParameters.get('DATAROBOT_API_KEY')['password']
+    logger.info("Using deployment=%s on server=%s", DEPLOYMENT_ID, public_api_url)
+
     headers = {
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer {}'.format(API_KEY),
     }
+    resp = requests.get(f"{public_api_url}/deployments/{DEPLOYMENT_ID}/", headers=headers)
+    resp.raise_for_status()
+    pred_server = resp.json()['defaultPredictionServer']
+    logger.info("Using prediction server=%s", pred_server['url'])
+
+    global API_URL
+    API_URL = pred_server['url'] + '/predApi/v1.0/deployments/{deployment_id}/predictions'
+    global DATAROBOT_KEY
+    DATAROBOT_KEY = pred_server['datarobot-key']
+
     return object()  # model placeholder
 
 
