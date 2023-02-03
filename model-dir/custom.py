@@ -16,39 +16,6 @@ from datarobot_drum.runtime_parameters.runtime_parameters import RuntimeParamete
 logger = logging.getLogger(__name__)
 
 
-def allowSelfSignedHttps():
-    ssl._create_default_https_context = ssl._create_unverified_context
-
-
-def make_remote_prediction_request(payload, url, api_key, deployment=None):
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
-    if deployment:
-        # The azureml-model-deployment header will force the request to go to a specific deployment.
-        headers["azureml-model-deployment"] = deployment
-
-    req = urllib.request.Request(url, data=payload, headers=headers)
-    try:
-        response = urllib.request.urlopen(req)
-    except urllib.error.HTTPError as error:
-        logger.error(
-            "The request failed with status_code=%s; headers=%s;\n%s",
-            error.code,
-            error.info(),
-            error.read().decode("utf8", "ignore"),
-        )
-        raise
-
-    try:
-        return json.load(response)
-    except json.JSONDecodeError as error:
-        logger.error("Response from server was not JSON: %s", error)
-        raise
-
-
-### PASTE AN INTEGRATION SNIPPET FROM A DEPLOYMENT ABOVE ###
 def _test_connectivity(endpoint, region, api_key):
     url = f"https://{endpoint}.{region}.inference.ml.azure.com/"
     logger.info("Checking liveness of endpoint: %s", url)
@@ -96,3 +63,37 @@ def score(data, model, **kwargs):
     # convert the prediction request response to the required data structure
     predictions_data = pd.DataFrame({"Predictions": response})
     return predictions_data
+
+
+### The code below was adapted from the snippet provided in the AzureML UI
+def allowSelfSignedHttps():
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+
+def make_remote_prediction_request(payload, url, api_key, deployment=None):
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    if deployment:
+        # The azureml-model-deployment header will force the request to go to a specific deployment.
+        headers["azureml-model-deployment"] = deployment
+
+    req = urllib.request.Request(url, data=payload, headers=headers)
+    try:
+        response = urllib.request.urlopen(req)
+    except urllib.error.HTTPError as error:
+        logger.error(
+            "The request failed with status_code=%s; headers=%s;\n%s",
+            error.code,
+            error.info(),
+            error.read().decode("utf8", "ignore"),
+        )
+        raise
+
+    try:
+        return json.load(response)
+    except json.JSONDecodeError as error:
+        logger.error("Response from server was not JSON: %s", error)
+        raise
+
