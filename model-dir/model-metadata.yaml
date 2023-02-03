@@ -24,6 +24,6 @@ runtimeParameterDefinitions:
     description: Optional name of specific deployment to use (if left blank we will use default endpoint routing).
   - fieldName: verifySSL
     type: string
-    defaultValue: true
+    defaultValue: "true"
     description: Wether to verify certificate trust chain
 
