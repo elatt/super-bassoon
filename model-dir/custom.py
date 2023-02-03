@@ -4,145 +4,95 @@ All rights reserved.
 This is proprietary source code of DataRobot, Inc. and its affiliates.
 Released under the terms of DataRobot Tool and Utility Agreement.
 """
-from datarobot_drum.runtime_parameters.runtime_parameters import RuntimeParameters
-import pandas as pd
-import requests
+import json
 import logging
+import ssl
+import urllib.request
+from types import SimpleNamespace
+
+import pandas as pd
+from datarobot_drum.runtime_parameters.runtime_parameters import RuntimeParameters
 
 logger = logging.getLogger(__name__)
 
-# Don't change this. It is enforced server-side too.
-MAX_PREDICTION_FILE_SIZE_BYTES = 52428800  # 50 MB
+
+def allowSelfSignedHttps():
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 
-class DataRobotPredictionError(Exception):
-    """Raised if there are issues getting predictions from DataRobot"""
-
-
-def make_datarobot_deployment_predictions(data, deployment_id):
-    """
-    Make predictions on data provided using DataRobot deployment_id provided.
-    See docs for details:
-         https://app.datarobot.com/docs/predictions/api/dr-predapi.html
-
-    Parameters
-    ----------
-    data : str
-        If using CSV as input:
-        Feature1,Feature2
-        numeric_value,string
-
-        Or if using JSON as input:
-        [{"Feature1":numeric_value,"Feature2":"string"}]
-
-    deployment_id : str
-        The ID of the deployment to make predictions with.
-
-    Returns
-    -------
-    Response schema:
-        https://app.datarobot.com/docs/predictions/api/dr-predapi.html#response-schema
-
-    Raises
-    ------
-    DataRobotPredictionError if there are issues getting predictions from DataRobot
-    """
-    # Set HTTP headers. The charset should match the contents of the file.
+def make_remote_prediction_request(payload, url, api_key, deployment=None):
     headers = {
-        # As default, we expect CSV as input data.
-        # Should you wish to supply JSON instead,
-        # comment out the line below and use the line after that instead:
-        'Content-Type': 'text/plain; charset=UTF-8',
-        # 'Content-Type': 'application/json; charset=UTF-8',
-
-        'Authorization': 'Bearer {}'.format(API_KEY),
-        'DataRobot-Key': DATAROBOT_KEY,
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
     }
+    if deployment:
+        # The azureml-model-deployment header will force the request to go to a specific deployment.
+        headers["azureml-model-deployment"] = deployment
 
-    url = API_URL.format(deployment_id=deployment_id)
-
-    # Prediction Explanations:
-    # See the documentation for more information:
-    # https://app.datarobot.com/docs/predictions/api/dr-predapi.html#request-pred-explanations
-    # Should you wish to include Prediction Explanations or Prediction Warnings in the result,
-    # Change the parameters below accordingly, and remove the comment from the params field below:
-
-    params = {
-        # If explanations are required, uncomment the line below
-        # 'maxExplanations': 3,
-        # 'thresholdHigh': 0.5,
-        # 'thresholdLow': 0.15,
-        # For multiclass/clustering explanations only one of the 2 fields below may be specified
-        # Explain this number of top predicted classes in each row
-        # 'explanationNumTopClasses': 1,
-        # Explain this list of class names
-        # 'explanationClassNames': [],
-        # If text explanations are required, uncomment the line below.
-        # 'maxNgramExplanations': 'all',
-        # Uncomment this for Prediction Warnings, if enabled for your deployment.
-        # 'predictionWarningEnabled': 'true',
-    }
-    # Make API request for predictions
-    predictions_response = requests.post(
-        url,
-        data=data,
-        headers=headers,
-        # Prediction Explanations:
-        # Uncomment this to include explanations in your prediction
-        # params=params,
-    )
-    _raise_dataroboterror_for_status(predictions_response)
-    # Return a Python dict following the schema in the documentation
-    return predictions_response.json()
-
-
-def _raise_dataroboterror_for_status(response):
-    """Raise DataRobotPredictionError if the request fails along with the response returned"""
+    req = urllib.request.Request(url, data=payload, headers=headers)
     try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        err_msg = '{code} Error: {msg}'.format(
-            code=response.status_code, msg=response.text)
-        raise DataRobotPredictionError(err_msg)
+        response = urllib.request.urlopen(req)
+    except urllib.error.HTTPError as error:
+        logger.error(
+            "The request failed with status_code=%s; headers=%s;\n%s",
+            error.code,
+            error.info(),
+            error.read().decode("utf8", "ignore"),
+        )
+        raise
+
+    try:
+        return json.load(response)
+    except json.JSONDecodeError as error:
+        logger.error("Response from server was not JSON: %s", error)
+        raise
 
 
 ### PASTE AN INTEGRATION SNIPPET FROM A DEPLOYMENT ABOVE ###
+def _test_connectivity(endpoint, region, api_key):
+    url = f"https://{endpoint}.{region}.inference.ml.azure.com/"
+    logger.info("Checking liveness of endpoint: %s", url)
+
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
+    try:
+        urllib.request.urlopen(req)
+    except urllib.error.HTTPError as error:
+        logger.error(
+            "Failed to connect to %s status_code=%s\n%s",
+            endpoint,
+            error.code,
+            error.read().decode("utf8", "ignore"),
+        )
+        raise
+
+
 def load_model(code_dir):
     logger.info("Loading Runtime Parameters...")
-    public_api_url = RuntimeParameters.get('DATAROBOT_ENDPOINT') + '/api/v2'
-    global DEPLOYMENT_ID
-    DEPLOYMENT_ID = RuntimeParameters.get('deploymentID')
+    api_key = RuntimeParameters.get("API_KEY")["password"]
 
-    global API_KEY
-    API_KEY = RuntimeParameters.get('DATAROBOT_API_KEY')['password']
-    logger.info("Using deployment=%s on server=%s", DEPLOYMENT_ID, public_api_url)
+    endpoint = RuntimeParameters.get("endpoint")
+    region = RuntimeParameters.get("region")
+    deployment = RuntimeParameters.get("deployment", None)
+    url = f"https://{endpoint}.{region}.inference.ml.azure.com/score"
+    verify_ssl = RuntimeParameters.get("verifySSL").lower() == "true"
 
-    headers = {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer {}'.format(API_KEY),
-    }
-    resp = requests.get(f"{public_api_url}/deployments/{DEPLOYMENT_ID}/", headers=headers)
-    resp.raise_for_status()
-    pred_server = resp.json()['defaultPredictionServer']
-    logger.info("Using prediction server=%s", pred_server['url'])
+    if verify_ssl:
+        allowSelfSignedHttps()
+    _test_connectivity(endpoint, region, api_key)
 
-    global API_URL
-    API_URL = pred_server['url'] + '/predApi/v1.0/deployments/{deployment_id}/predictions'
-    global DATAROBOT_KEY
-    DATAROBOT_KEY = pred_server['datarobot-key']
-
-    return object()  # model placeholder
+    return SimpleNamespace(**locals())  # model placeholder
 
 
 def score(data, model, **kwargs):
-    # prepare the prediction request payload
-    payload = data.to_csv(index=False)
-
-    # make the prediction request
-    response = make_datarobot_deployment_predictions(payload, DEPLOYMENT_ID)
+    # convert incoming data to format AzureML expects
+    payload = {"input_data": data.to_dict(orient="split")}
+    response = make_remote_prediction_request(
+        json.dumps(payload).encode("utf-8"),
+        model.url,
+        model.api_key,
+        deployment=model.deployment,
+    )
 
     # convert the prediction request response to the required data structure
-    predictions = [item['prediction'] for item in response['data']]
-    predictions_data = pd.DataFrame({'Predictions': predictions})
-
+    predictions_data = pd.DataFrame({"Predictions": response})
     return predictions_data

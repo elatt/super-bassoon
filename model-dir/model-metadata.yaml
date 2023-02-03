@@ -9,14 +9,21 @@ validation:
   # Path is relative to this file
   input: ../../../tests/testdata/juniors_3_year_stats_regression.csv
 runtimeParameterDefinitions:
-  - fieldName: DATAROBOT_ENDPOINT
+  - fieldName: endpoint
     type: string
-    defaultValue: https://app.datarobot.com
-    description: URL of remote DataRobot instance
-  - fieldName: DATAROBOT_API_KEY
+    description: The name of the AzureML endpoint.
+  - fieldName: region
+    type: string
+    defaultValue: eastus
+    description: The region name the endpoint resides in.
+  - fieldName: API_KEY
     type: credential
-    description: An HTTP Basic credential that contains the DataRobot API key in the password field (the username field is ignored)
-  - fieldName: deploymentID
+    description: An HTTP Basic credential that contains the Endpoint's API key in the password field (the username field is ignored).
+  - fieldName: deployment
     type: string
-    description: ID of the deployment to use
+    description: Optional name of specific deployment to use (if left blank we will use default endpoint routing).
+  - fieldName: verifySSL
+    type: string
+    defaultValue: true
+    description: Wether to verify certificate trust chain
 
