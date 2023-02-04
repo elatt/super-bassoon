@@ -1,7 +1,2 @@
 datarobot-drum==1.9.15.dev2
-requests
-urllib3[secure]
-certifi
-
-# If we were to use Batch Predictions
-#datarobot==3.0.2
+scikit-learn==0.24.2
