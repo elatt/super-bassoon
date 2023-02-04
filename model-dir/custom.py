@@ -16,7 +16,7 @@ def transform(data, model):
     assert credential['credential_type'] == 'basic'
 
     option1 = RuntimeParameters.get('option1')
-    option2 = RuntimeParameters.get('option2')
+    option2 = RuntimeParameters.get('option2', None)
     print("Loading the following Runtime Parameters:")
     print(f"\toption1: {option1}")
     print(f"\toption2: {option2}")
