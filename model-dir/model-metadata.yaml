@@ -13,7 +13,7 @@ runtimeParameterDefinitions:
   - fieldName: option1
     type: string
     defaultValue: ABCD 123
-    description: Some URL to
+    description: A param that sets a default is none is provided
 
   - fieldName: option2
     type: string
