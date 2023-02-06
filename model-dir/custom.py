@@ -13,10 +13,10 @@ def mask(value):
 
 def transform(data, model):
     credential = RuntimeParameters.get('api_key')
-    assert credential['credential_type'] == 'basic'
+    assert credential['credentialType'] == 'basic'
 
     option1 = RuntimeParameters.get('option1')
-    option2 = RuntimeParameters.get('option2', None)
+    option2 = RuntimeParameters.get('option2')
     print("Loading the following Runtime Parameters:")
     print(f"\toption1: {option1}")
     print(f"\toption2: {option2}")
