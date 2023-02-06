@@ -1,2 +1,2 @@
-datarobot-drum>=1.9.15rc1
+datarobot-drum>=1.10.0rc1
 scikit-learn==0.24.2
