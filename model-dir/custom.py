@@ -39,7 +39,7 @@ def load_model(code_dir):
 
     endpoint = RuntimeParameters.get("endpoint")
     region = RuntimeParameters.get("region")
-    deployment = RuntimeParameters.get("deployment", None)
+    deployment = RuntimeParameters.get("deployment")
     url = f"https://{endpoint}.{region}.inference.ml.azure.com/score"
     verify_ssl = RuntimeParameters.get("verifySSL").lower() == "true"
 

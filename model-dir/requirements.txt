@@ -1,2 +1,2 @@
-datarobot-drum==1.9.15.dev2
+datarobot-drum>=1.9.15rc1
 pandas
