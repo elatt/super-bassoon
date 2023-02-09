@@ -12,14 +12,16 @@ def mask(value):
 
 
 def transform(data, model):
-    credential = RuntimeParameters.get('api_key')
-    assert credential['credentialType'] == 'basic'
-
+    print("Loading the following Runtime Parameters:")
     option1 = RuntimeParameters.get('option1')
     option2 = RuntimeParameters.get('option2')
-    print("Loading the following Runtime Parameters:")
     print(f"\toption1: {option1}")
     print(f"\toption2: {option2}")
-    print(f"\tapi_key: username={mask(credential['username'])} "
-          f"password={mask(credential['password'])}")
+    
+    credential = RuntimeParameters.get('api_key')
+    if credential is not None:
+        credential_type = credential.pop('credentialType')
+        print(f"\tapi_key(type={credential_type}): " + credential)
+    else:
+        print("No credential data set")
     return data
