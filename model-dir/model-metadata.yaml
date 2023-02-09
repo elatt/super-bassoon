@@ -19,6 +19,10 @@ runtimeParameterDefinitions:
     type: string
     description: Some param that doesn't have a default
 
+  - fieldName: option3
+    type: string
+    description: Another param that doesn't have a default
+
   - fieldName: api_key
     type: credential
     description: Some secret injected by DataRobot
