@@ -1,29 +1,21 @@
-name: drumpush-regression
+name: runtime-params-example
 type: inference
 targetType: regression
-modelID: 5f1f15a4d6111f01cb7f91fd
-environmentID: 5e8c889607389fe0f466c72d
-inferenceModel:
-  targetName: Grade 2014
-validation:
-  # Path is relative to this file
-  input: ../../../tests/testdata/juniors_3_year_stats_regression.csv
 
 runtimeParameterDefinitions:
   - fieldName: option1
     type: string
     defaultValue: ABCD 123
-    description: A param that sets a default is none is provided
+    description: Input any text that helps inform others what this param does.
 
   - fieldName: option2
     type: string
-    description: Some param that doesn't have a default
+    description: However, a description is optional...
 
   - fieldName: option3
     type: string
-    description: Another param that doesn't have a default
 
-  - fieldName: api_key
+  - fieldName: encryption_key
     type: credential
-    description: Some secret injected by DataRobot
+    description: Some secret injected by DataRobot and stored in the Credential Manager.
 
